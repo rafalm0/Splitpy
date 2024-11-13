@@ -2,7 +2,7 @@ from flask_smorest import Blueprint, abort
 from schemas import MemberSchema, TransactionMemberSchema
 from flask.views import MethodView
 from models import MemberModel, GroupModel, TransactionMember, TransactionModel
-
+from flask_jwt_extended import get_jwt, jwt_required
 from db import db
 from sqlalchemy.exc import SQLAlchemyError
 

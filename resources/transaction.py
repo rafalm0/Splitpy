@@ -5,7 +5,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from db import db
 from models import TransactionModel
 from schemas import TransactionSchema, TransactionUpdateSchema
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import get_jwt, jwt_required
 
 blp = Blueprint("Transactions", __name__, description="Operations on transactions")
 

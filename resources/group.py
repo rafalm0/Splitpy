@@ -5,6 +5,7 @@ from flask_smorest import Blueprint, abort
 
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from models import GroupModel
+from flask_jwt_extended import get_jwt, jwt_required
 from db import db
 from schemas import GroupSchema
 
@@ -14,11 +15,13 @@ blp = Blueprint("groups", __name__, description="Operations on groups")
 @blp.route("/group/<int:group_id>")
 class Group(MethodView):
 
+    @jwt_required()
     @blp.response(200, GroupSchema)
     def get(self, group_id):
         group = GroupModel.query.get_or_404(group_id)
         return group
 
+    @jwt_required()
     def delete(self, group_id):
         group = GroupModel.query.get_or_404(group_id)
         db.session.delete(group)
@@ -28,10 +31,12 @@ class Group(MethodView):
 
 @blp.route("/group")
 class GroupList(MethodView):
+    @jwt_required()
     @blp.response(200, GroupSchema(many=True))
     def get(self):
         return GroupModel.query.all()
 
+    @jwt_required()
     @blp.arguments(GroupSchema)
     @blp.response(201, GroupSchema)
     def post(self,
