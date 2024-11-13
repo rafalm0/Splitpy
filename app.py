@@ -11,9 +11,9 @@ if os.path.exists("env_config.py"):
 from blocklist import BLOCKLIST
 from db import db
 
-from resources.item import blp as ItemBlueprint
-from resources.store import blp as StoreBlueprint
-from resources.tag import blp as TagBlueprint
+from resources.transaction import blp as TransactionBlueprint
+from resources.group import blp as GroupBlueprint
+from resources.member import blp as MemberBlueprint
 from resources.user import blp as UserBlueprint
 
 

@@ -41,7 +41,7 @@ class MemberSchema(PlainMemberSchema):
     # items = fields.List(fields.Nested(PlainItemSchema()), dump_only=True)
 
 
-class TransactionAndMemberSchema(Schema):
+class TransactionMemberSchema(Schema):
     transaction = fields.Nested(TransactionSchema)
     member = fields.Nested(MemberSchema)
 
