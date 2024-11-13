@@ -4,55 +4,57 @@ from marshmallow import Schema, fields
 for versions that include more and could be related to other objects or key'''
 
 
-class PlainItemSchema(Schema):
+class PlainTransactionSchema(Schema):
     id = fields.Int(dump_only=True)  # means that we generate this, so we never receive it
-    name = fields.Str(required=True)
+    description = fields.Str(required=True)
     price = fields.Float(required=True)
 
 
-class PlainTagSchema(Schema):
+class PlainMemberSchema(Schema):
     id = fields.Int(dump_only=True)
     name = fields.Str()
 
 
-class PlainStoreSchema(Schema):
-    id = fields.Int(dump_only=True)  # Alternative is Load only where we never need to send to client this
+class PlainGroupSchema(Schema):
+    id = fields.Int(dump_only=True)
     name = fields.Str(required=True)
 
 
-class ItemSchema(PlainItemSchema):
-    store_id = fields.Int(required=True, load_only=True)
-    store = fields.Nested(PlainItemSchema(), dump_only=True)
-    tags = fields.List(fields.Nested(PlainTagSchema()), dump_only=True)
+class TransactionSchema(PlainTransactionSchema):
+    group_id = fields.Int(required=True, load_only=True)
+    # group = fields.Nested(PlainTransactionSchema(), dump_only=True)
+    group = fields.Nested(PlainGroupSchema(), dump_only=True)
+    payer_id = fields.Int(required=True, load_only=True)
+    members = fields.List(fields.Nested(PlainMemberSchema()), dump_only=True)
 
 
-class ItemUpdateSchema(Schema):
-    name = fields.Str()
+class TransactionUpdateSchema(Schema):
+    description = fields.Str()
     price = fields.Float()
-    store_id = fields.Int()
 
 
-class TagSchema(PlainTagSchema):
-    store_id = fields.Int(load_only=True)
-    store = fields.Nested(PlainStoreSchema(), dump_only=True)
-    items = fields.List(fields.Nested(PlainItemSchema()), dump_only=True)
+class MemberSchema(PlainMemberSchema):
+    group_id = fields.Int(load_only=True)
+    group = fields.Nested(PlainGroupSchema(), dump_only=True)
+    transactions = fields.List(fields.Nested(PlainTransactionSchema()), dump_only=True)
+    # store = fields.Nested(PlainStoreSchema(), dump_only=True)
+    # items = fields.List(fields.Nested(PlainItemSchema()), dump_only=True)
 
 
-class StoreSchema(PlainStoreSchema):
-    items = fields.List(fields.Nested(PlainItemSchema()), dump_only=True)
-    tags = fields.List(fields.Nested(PlainTagSchema()), dump_only=True)
-
-
-class TagAndItemSchema(Schema):
-    message = fields.Str()
-    item = fields.Nested(ItemSchema)
-    tag = fields.Nested(TagSchema)
+class TransactionAndMemberSchema(Schema):
+    transaction = fields.Nested(TransactionSchema)
+    member = fields.Nested(MemberSchema)
 
 
 class UserSchema(Schema):
     id = fields.Int(dump_only=True)
     username = fields.Str(required=True)
     password = fields.Str(required=True, load_only=True)
+
+
+class GroupSchema(PlainGroupSchema):
+    user = fields.Nested(UserSchema(), dump_only=True)
+    user_id = fields.Int(required=True, load_only=True)
 
 
 class UserRegisterSchema(UserSchema):

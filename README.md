@@ -1,7 +1,6 @@
-# Flask-Api
+# SplitPy
 
-Flask Api Store
-This skeleton can be used for any type of project desired to be deployed.
+App for splitting bills
 
 ## Table of Contents
 
