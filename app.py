@@ -35,7 +35,7 @@ def create_app(db_url=None):
     app.queue = Queue("emails", connection=redis_connection)
     app.config['USING_REDIS_QUEUE'] = False
     app.config["PROPAGATE_EXCEPTIONS"] = True
-    app.config["API_TITLE"] = "Stores REST API"
+    app.config["API_TITLE"] = "SplitPy"
     app.config["API_VERSION"] = "v1"
     app.config["OPENAPI_VERSION"] = "3.0.3"
     app.config["OPENAPI_URL_PREFIX"] = "/"
@@ -46,7 +46,7 @@ def create_app(db_url=None):
     else:
         app.config['SQLALCHEMY_DATABASE_URI'] = db_url or os.getenv("DATABASE_URL", "sqlite:///data.db")
     app.config['SQLALCHEMY_TACK_MODIFICATIONS'] = False
-    app.config['JWT_SECRET_KEY'] = '261696634396203470738536034261566624783'
+    app.config['JWT_SECRET_KEY'] = os.getenv("JWT_KEY", '261696634396203470738536034261566624783')
 
     print(f"Deployment database on {app.config['SQLALCHEMY_DATABASE_URI']},")
     # ------------------------- populating db with tables ------------------------
