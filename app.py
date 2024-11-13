@@ -97,9 +97,9 @@ def create_app(db_url=None):
 
     # -------------------------- blueprint registers --------------------------
 
-    api.register_blueprint(ItemBlueprint)
-    api.register_blueprint(StoreBlueprint)
-    api.register_blueprint(TagBlueprint)
+    api.register_blueprint(TransactionBlueprint)
+    api.register_blueprint(GroupBlueprint)
+    api.register_blueprint(MemberBlueprint)
     api.register_blueprint(UserBlueprint)
 
     return app
