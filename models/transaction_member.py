@@ -1,7 +1,7 @@
 from db import db
 
 
-class TransactionAndMember(db.Model):
+class TransactionMember(db.Model):
     __tablename__ = "transaction_member"
 
     transaction_id = db.Column(db.Integer, db.ForeignKey("transactions.id"), primary_key=True, nullable=False)
