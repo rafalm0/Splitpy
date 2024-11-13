@@ -1,0 +1,16 @@
+flask
+flask-smorest
+python-dotenv
+service
+docutils~=0.21.2
+marshmallow~=3.22.0
+sqlalchemy
+flask-sqlalchemy
+gunicorn
+flask-jwt-extended
+passlib
+flask-migrate
+psycopg2
+requests
+rq
+redis
