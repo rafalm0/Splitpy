@@ -1,14 +1,14 @@
 from db import db
 
 
-class StoreModel(db.Model):
-    __tablename__ = "stores"
+class GroupModel(db.Model):
+    __tablename__ = "groups"
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(80), unique=True, nullable=False)
 
-    tags = db.relationship("TagModel", back_populates="store", lazy="dynamic")
-    items = db.relationship("ItemModel", back_populates="store", lazy="dynamic")
+    members = db.relationship("MemberModel", back_populates="groups", lazy="dynamic")
+    transactions = db.relationship("TransactionModel", back_populates="groups", lazy="dynamic")
 
     # https://docs.sqlalchemy.org/en/20/orm/cascades.html
 
