@@ -5,24 +5,27 @@ from sqlalchemy.exc import SQLAlchemyError
 from db import db
 from models import TransactionModel
 from schemas import TransactionSchema, TransactionUpdateSchema
-from flask_jwt_extended import get_jwt, jwt_required
+from flask_jwt_extended import get_jwt, jwt_required, get_jwt_identity
 
 blp = Blueprint("Transactions", __name__, description="Operations on transactions")
 
 
 @blp.route("/transaction/<int:transaction_id>")
 class Transaction(MethodView):
+    @jwt_required()
     @blp.response(200, TransactionSchema)
     def get(self, transaction_id):
         transaction = TransactionModel.query.get_or_404(transaction_id)
         return transaction
 
+    @jwt_required()
     def delete(self, transaction_id):
         transaction = TransactionModel.query.get_or_404(transaction_id)
         db.session.delete(transaction)
         db.session.commit()
         return {"message": "Transaction deleted."}
 
+    @jwt_required()
     @blp.arguments(TransactionUpdateSchema)
     @blp.response(200, TransactionSchema)
     def put(self, transaction_data, transaction_id):
@@ -42,11 +45,12 @@ class Transaction(MethodView):
 
 @blp.route("/transaction")
 class TransactionList(MethodView):
-    # @jwt_required()
+    @jwt_required()
     @blp.response(200, TransactionSchema(many=True))
     def get(self):
         return TransactionModel.query.all()
 
+    @jwt_required()
     @blp.arguments(TransactionSchema)
     @blp.response(201, TransactionSchema)
     def post(self, transaction_data):

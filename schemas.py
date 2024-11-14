@@ -55,7 +55,7 @@ class UserSchema(Schema):
 
 class GroupSchema(PlainGroupSchema):
     user = fields.Nested(UserSchema(), dump_only=True)
-    user_id = fields.Int(required=True, load_only=True)
+    user_id = fields.Int(load_only=True)
 
 
 class UserRegisterSchema(UserSchema):
