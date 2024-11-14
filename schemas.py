@@ -24,7 +24,6 @@ class TransactionSchema(PlainTransactionSchema):
     group_id = fields.Int(required=True, load_only=True)
     # group = fields.Nested(PlainTransactionSchema(), dump_only=True)
     group = fields.Nested(PlainGroupSchema(), dump_only=True)
-    payer_id = fields.Int(required=True, load_only=True)
     members = fields.List(fields.Nested(PlainMemberSchema()), dump_only=True)
 
 
@@ -44,6 +43,7 @@ class MemberSchema(PlainMemberSchema):
 class TransactionMemberSchema(Schema):
     transaction = fields.Nested(TransactionSchema)
     member = fields.Nested(MemberSchema)
+    is_payer = fields.Bool()
 
 
 class UserSchema(Schema):
