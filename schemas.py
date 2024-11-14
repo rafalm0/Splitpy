@@ -20,17 +20,17 @@ class PlainGroupSchema(Schema):
     name = fields.Str(required=True)
 
 
-class TransactionMemberSchema(Schema):
-    transaction = fields.Nested("TransactionSchema", dump_only=True)  # Updated to ensure this is only for output
-    member_id = fields.Int(required=True)  # Added for direct input reference
-    is_payer = fields.Bool(required=True)
-
-
 class TransactionSchema(PlainTransactionSchema):
     group_id = fields.Int(required=True, load_only=True)
     group = fields.Nested(PlainGroupSchema(), dump_only=True)
     # Allow members to be included in input and output
     members = fields.List(fields.Nested(TransactionMemberSchema()), required=True)
+
+
+class TransactionMemberSchema(Schema):
+    transaction = fields.Nested("TransactionSchema", dump_only=True)  # Updated to ensure this is only for output
+    member_id = fields.Int(required=True)  # Added for direct input reference
+    is_payer = fields.Bool(required=True)
 
 
 class TransactionUpdateSchema(Schema):
