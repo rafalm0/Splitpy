@@ -22,9 +22,9 @@ class PlainGroupSchema(Schema):
 
 class TransactionSchema(PlainTransactionSchema):
     group_id = fields.Int(required=True, load_only=True)
+    # group = fields.Nested(PlainTransactionSchema(), dump_only=True)
     group = fields.Nested(PlainGroupSchema(), dump_only=True)
-    # Allow members to be included in input and output
-    members = fields.List(fields.Nested(TransactionMemberSchema()), required=True)
+    members = fields.List(fields.Nested(PlainMemberSchema()), dump_only=True)
 
 
 class TransactionUpdateSchema(Schema):
@@ -36,12 +36,14 @@ class MemberSchema(PlainMemberSchema):
     group_id = fields.Int(load_only=True)
     group = fields.Nested(PlainGroupSchema(), dump_only=True)
     transactions = fields.List(fields.Nested(PlainTransactionSchema()), dump_only=True)
+    # store = fields.Nested(PlainStoreSchema(), dump_only=True)
+    # items = fields.List(fields.Nested(PlainItemSchema()), dump_only=True)
 
 
 class TransactionMemberSchema(Schema):
-    transaction = fields.Nested(TransactionSchema, dump_only=True)  # Updated to ensure this is only for output
-    member_id = fields.Int(required=True)  # Added for direct input reference
-    is_payer = fields.Bool(required=True)
+    transaction = fields.Nested(TransactionSchema)
+    member = fields.Nested(MemberSchema)
+    is_payer = fields.Bool()
 
 
 class UserSchema(Schema):
