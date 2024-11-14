@@ -10,10 +10,5 @@ class GroupModel(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     user = db.relationship("UserModel", back_populates="groups")
 
-    members = db.relationship("MemberModel", back_populates="groups", lazy="dynamic")
-    transactions = db.relationship("TransactionModel", back_populates="groups", lazy="dynamic")
-
-    # https://docs.sqlalchemy.org/en/20/orm/cascades.html
-
-    '''lazy avoids contant refreshing data instead of only when needed, and cascade deletes the child when parant
-    is deleted, therefore here items are deleted if their store is deleted'''
+    members = db.relationship("MemberModel", back_populates="group", lazy="dynamic")
+    transactions = db.relationship("TransactionModel", back_populates="group", lazy="dynamic")
