@@ -27,6 +27,12 @@ class TransactionSchema(PlainTransactionSchema):
     members = fields.List(fields.Nested(TransactionMemberSchema()), required=True)
 
 
+class TransactionMemberSchema(Schema):
+    transaction = fields.Nested("TransactionSchema", dump_only=True)  # Updated to ensure this is only for output
+    member_id = fields.Int(required=True)  # Added for direct input reference
+    is_payer = fields.Bool(required=True)
+
+
 class TransactionUpdateSchema(Schema):
     description = fields.Str()
     price = fields.Float()
@@ -36,12 +42,6 @@ class MemberSchema(PlainMemberSchema):
     group_id = fields.Int(load_only=True)
     group = fields.Nested(PlainGroupSchema(), dump_only=True)
     transactions = fields.List(fields.Nested(PlainTransactionSchema()), dump_only=True)
-
-
-class TransactionMemberSchema(Schema):
-    transaction = fields.Nested(TransactionSchema, dump_only=True)  # Updated to ensure this is only for output
-    member_id = fields.Int(required=True)  # Added for direct input reference
-    is_payer = fields.Bool(required=True)
 
 
 class UserSchema(Schema):
