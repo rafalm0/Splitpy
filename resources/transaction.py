@@ -97,24 +97,45 @@ class TransactionList(MethodView):
         if group.user_id != current_user_id:
             abort(403, message="You are not authorized to add a transaction to this group.")
 
-        transaction = TransactionModel(**transaction_data)
+        transaction = TransactionModel(
+            description=transaction_data['description'],
+            price=transaction_data['price'],
+            group_id=transaction_data['group_id']
+        )
         try:
             db.session.add(transaction)
-            db.session.flush()  # Ensures the transaction has an ID before adding members
+            db.session.flush()  # Ensure transaction ID is available
 
-            # Handle member linking
-            if "members" in transaction_data:
-                for member_data in transaction_data["members"]:
-                    member = MemberModel.query.get_or_404(member_data["member_id"])
-                    if member.group_id != group.id:
-                        abort(400, message="Member does not belong to the group.")
+            members_list = []
+            raw_members = transaction_data.get('members_raw') # only one of these are accepted by marshmallow
+            nested_members = transaction_data.get('members')
 
-                    transaction_member_link = TransactionMember(
-                        transaction_id=transaction.id,
-                        member_id=member.id,
-                        is_payer=member_data.get("is_payer", False)
-                    )
-                    db.session.add(transaction_member_link)
+            if raw_members:
+                for member_data in raw_members:
+                    members_list.append({
+                        "member_id": member_data.get("member_id"),
+                        "is_payer": member_data.get("is_payer", False)
+                    })
+
+            elif nested_members:
+                for member_obj in nested_members:
+                    members_list.append({
+                        "member_id": member_obj.member_id,
+                        "is_payer": member_obj.is_payer
+                    })
+
+            # Process each member in the unified list
+            for member_data in members_list:
+                member = MemberModel.query.get_or_404(member_data["member_id"])
+                if member.group_id != group.id:
+                    abort(400, message="Member does not belong to the group.")
+
+                transaction_member_link = TransactionMember(
+                    transaction_id=transaction.id,
+                    member_id=member.id,
+                    is_payer=member_data["is_payer"]
+                )
+                db.session.add(transaction_member_link)
 
             db.session.commit()
         except SQLAlchemyError:
@@ -122,3 +143,4 @@ class TransactionList(MethodView):
             abort(500, message="An error occurred while inserting the transaction.")
 
         return transaction
+
