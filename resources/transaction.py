@@ -106,17 +106,19 @@ class TransactionList(MethodView):
             if "members" in transaction_data:
                 for member_data in transaction_data["members"]:
                     member = MemberModel.query.get_or_404(member_data["member_id"])
+
                     if member.group_id != group.id:
                         abort(400, message="Member does not belong to the group.")
 
                     transaction_member_link = TransactionMember(
-                        transaction_id=transaction.id,
-                        member_id=member.id,
+                        transaction_id=transaction.id,  # Now correctly using the transaction id
+                        member_id=member.id,  # Ensure this is linked to the right member
                         is_payer=member_data.get("is_payer", False)
                     )
                     db.session.add(transaction_member_link)
 
             db.session.commit()
+
         except SQLAlchemyError:
             db.session.rollback()
             abort(500, message="An error occurred while inserting the transaction.")
