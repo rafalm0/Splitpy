@@ -24,7 +24,15 @@ class TransactionSchema(PlainTransactionSchema):
     group_id = fields.Int(required=True, load_only=True)
     # group = fields.Nested(PlainTransactionSchema(), dump_only=True)
     group = fields.Nested(PlainGroupSchema(), dump_only=True)
-    members = fields.List(fields.Nested(PlainMemberSchema()), dump_only=True)
+    members = fields.List(fields.Nested(PlainMemberSchema()), required=False, dump_only=True)
+    members_raw = fields.List(fields.Dict(), required=False)
+
+    @validates_schema
+    def validate_members(self, data, **kwargs):
+        if 'members' not in data and 'members_raw' not in data:
+            raise ValidationError("Either 'members' or 'members_raw' must be provided.")
+        if 'members' in data and 'members_raw' in data:
+            raise ValidationError("Provide only one of 'members' or 'members_raw', not both.")
 
 
 class TransactionUpdateSchema(Schema):
