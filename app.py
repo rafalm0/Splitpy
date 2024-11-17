@@ -10,6 +10,8 @@ if os.path.exists("env_config.py"):
     import env_config
 from blocklist import BLOCKLIST
 from db import db
+from flask_cors import CORS  # Import CORS
+
 
 from resources.transaction import blp as TransactionBlueprint
 from resources.group import blp as GroupBlueprint
@@ -22,6 +24,8 @@ from resources.user import blp as UserBlueprint
 
 def create_app(db_url=None):
     app = Flask(__name__)
+    cors = CORS(app, supports_credentials=True)  # allow CORS for all domains on all routes.
+    app.config['CORS_HEADERS'] = 'Content-Type'
 
     load_dotenv(".env")
     # --------------------------------- redis connection ---------------------
