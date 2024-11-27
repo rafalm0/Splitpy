@@ -17,7 +17,7 @@ class MemberInGroup(MethodView):
         group = GroupModel.query.get_or_404(group_id)
         current_user_id = get_jwt_identity()
 
-        if group.user_id != current_user_id:
+        if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to view members of this group.")
 
         return group.members.all()
@@ -29,7 +29,7 @@ class MemberInGroup(MethodView):
         current_user_id = get_jwt_identity()
         group = GroupModel.query.get_or_404(group_id)
 
-        if group.user_id != current_user_id:
+        if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to add members to this group.")
 
         member = MemberModel(group_id=group_id, **tag_data)
@@ -70,7 +70,7 @@ class LinkMembersToTransaction(MethodView):
         member = MemberModel.get_or_404(member_id)
         current_user_id = get_jwt_identity()
 
-        if transaction.group.user_id != current_user_id:
+        if str(transaction.group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to remove members from this transaction.")
 
         transaction.members.remove(member)
@@ -90,7 +90,7 @@ class Group(MethodView):
         member = MemberModel.query.get_or_404(member_id)
         current_user_id = get_jwt_identity()
 
-        if member.group.user_id != current_user_id:
+        if str(member.group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to view this member.")
 
         return member
@@ -104,7 +104,7 @@ class Group(MethodView):
         member = MemberModel.query.get_or_404(member_id)
         current_user_id = get_jwt_identity()
 
-        if member.group.user_id != current_user_id:
+        if str(member.group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to delete this member.")
 
         if not member.transactions:

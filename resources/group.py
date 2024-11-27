@@ -20,7 +20,7 @@ class Group(MethodView):
     def get(self, group_id):
         group = GroupModel.query.get_or_404(group_id)
         current_user_id = get_jwt_identity()
-        if group.user_id != current_user_id:
+        if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to view this group.")
 
         return group
@@ -36,7 +36,7 @@ class Group(MethodView):
         group = GroupModel.query.get_or_404(group_id)
 
         # Check if the group belongs to the current user
-        if group.user_id != current_user_id:
+        if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to update this group.")
 
         # Update the group's fields

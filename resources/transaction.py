@@ -19,7 +19,7 @@ class Transaction(MethodView):
         group = GroupModel.query.get_or_404(transaction.group_id)
         current_user_id = get_jwt_identity()
 
-        if group.user_id != current_user_id:
+        if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to view this transaction.")
 
         return transaction
@@ -30,7 +30,7 @@ class Transaction(MethodView):
         group = GroupModel.query.get_or_404(transaction.group_id)
         current_user_id = get_jwt_identity()
 
-        if group.user_id != current_user_id:
+        if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to delete this transaction.")
 
         db.session.delete(transaction)
@@ -45,7 +45,7 @@ class Transaction(MethodView):
         group = GroupModel.query.get_or_404(transaction.group_id)
         current_user_id = get_jwt_identity()
 
-        if group.user_id != current_user_id:
+        if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to update this transaction.")
 
         transaction.price = transaction_data["price"]
@@ -94,7 +94,7 @@ class TransactionList(MethodView):
         current_user_id = get_jwt_identity()
         group = GroupModel.query.get_or_404(transaction_data["group_id"])
 
-        if group.user_id != current_user_id:
+        if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to add a transaction to this group.")
 
         transaction = TransactionModel(
