@@ -26,6 +26,35 @@ class Group(MethodView):
         return group
 
     @jwt_required()
+    @blp.arguments(GroupSchema)
+    @blp.response(200, GroupSchema)
+    def put(self, group_data, group_id):
+        """
+        Update an existing group by its ID.
+        """
+        current_user_id = get_jwt_identity()
+        group = GroupModel.query.get_or_404(group_id)
+
+        # Check if the group belongs to the current user
+        if group.user_id != current_user_id:
+            abort(403, message="You are not authorized to update this group.")
+
+        # Update the group's fields
+        try:
+            if "name" in group_data:
+                group.name = group_data["name"]
+
+            db.session.commit()  # Save changes
+        except IntegrityError:
+            db.session.rollback()
+            abort(400, message="A group with this name already exists.")
+        except SQLAlchemyError:
+            db.session.rollback()
+            abort(500, message="An error occurred while updating the group.")
+
+        return group
+
+    @jwt_required()
     def delete(self, group_id):
         group = GroupModel.query.get_or_404(group_id)
 
