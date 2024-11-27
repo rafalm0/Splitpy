@@ -59,7 +59,7 @@ class Group(MethodView):
         group = GroupModel.query.get_or_404(group_id)
 
         current_user_id = get_jwt_identity()
-        if group.user_id != current_user_id:
+        if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to delete this group.")
         db.session.delete(group)
         db.session.commit()
