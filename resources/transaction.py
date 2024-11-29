@@ -82,7 +82,7 @@ class TransactionList(MethodView):
         transactions = (
             db.session.query(TransactionModel)
             .join(GroupModel)
-            .filter(GroupModel.user_id == current_user_id)
+            .filter(str(GroupModel.user_id) == str(current_user_id))
             .all()
         )
         return transactions
