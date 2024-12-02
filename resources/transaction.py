@@ -81,10 +81,15 @@ class TransactionList(MethodView):
         # Fetch transactions only belonging to groups owned by the logged-in user
         transactions = (
             db.session.query(TransactionModel)
-            .join(GroupModel)
+            .join(GroupModel, GroupModel.id == TransactionModel.group_id)
+            .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
+            .join(MemberModel, MemberModel.id == TransactionMember.member_id)
+            .add_columns(TransactionModel.id, TransactionModel.description, TransactionModel.price,
+                         MemberModel.name, TransactionMember.is_payer)
             .filter(GroupModel.user_id == current_user_id)
             .all()
         )
+
         return transactions
 
     @jwt_required()
@@ -107,7 +112,7 @@ class TransactionList(MethodView):
             db.session.flush()  # Ensure transaction ID is available
 
             members_list = []
-            raw_members = transaction_data.get('members_raw') # only one of these are accepted by marshmallow
+            raw_members = transaction_data.get('members_raw')  # only one of these are accepted by marshmallow
             nested_members = transaction_data.get('members')
 
             if raw_members:
@@ -143,4 +148,3 @@ class TransactionList(MethodView):
             abort(500, message="An error occurred while inserting the transaction.")
 
         return transaction
-
