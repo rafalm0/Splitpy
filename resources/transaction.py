@@ -75,6 +75,7 @@ class Transaction(MethodView):
 @blp.route("/transaction")
 class TransactionList(MethodView):
     @jwt_required()
+    @blp.response(200, TransactionSchema(many=True))
     def get(self):
         current_user_id = get_jwt_identity()
         # Fetch transactions only belonging to groups owned by the logged-in user
