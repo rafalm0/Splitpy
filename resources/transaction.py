@@ -4,7 +4,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from db import db
 from models import TransactionModel, GroupModel, MemberModel, TransactionMember
-from schemas import TransactionSchema, TransactionUpdateSchema, TransactionMemberSchema
+from schemas import TransactionSchema, TransactionUpdateSchema, TransactionMemberSchema, EnrichedTransactionSchema
 from flask_jwt_extended import get_jwt, jwt_required, get_jwt_identity
 
 blp = Blueprint("Transactions", __name__, description="Operations on transactions")
@@ -75,21 +75,38 @@ class Transaction(MethodView):
 @blp.route("/transaction")
 class TransactionList(MethodView):
     @jwt_required()
-    @blp.response(200, TransactionSchema(many=True))
+    @blp.response(200, EnrichedTransactionSchema(many=True))
     def get(self):
         current_user_id = get_jwt_identity()
-        # Fetch transactions only belonging to groups owned by the logged-in user
         transactions = (
             db.session.query(TransactionModel)
             .join(GroupModel, GroupModel.id == TransactionModel.group_id)
             .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
             .join(MemberModel, MemberModel.id == TransactionMember.member_id)
-            .add_columns(MemberModel.name, TransactionMember.is_payer)
             .filter(GroupModel.user_id == current_user_id)
+            .add_columns(MemberModel.name, TransactionMember.is_payer)
             .all()
         )
 
-        return transactions
+        # Build the response structure
+        enriched_transactions = {}
+        for t in transactions:
+            transaction = t[0]
+            member_name = t[1]
+            is_member_payer = t[2]
+            if transaction.id not in enriched_transactions:
+                enriched_transactions[transaction.id] = {
+                    "id": transaction.id,
+                    "description": transaction.description,
+                    "price": transaction.price,
+                    "members": []
+                }
+            enriched_transactions[transaction.id]["members"].append({
+                "name": member_name,
+                "is_payer": is_member_payer
+            })
+
+        return list(enriched_transactions.values())
 
     @jwt_required()
     @blp.arguments(TransactionSchema)

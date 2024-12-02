@@ -61,3 +61,15 @@ class GroupSchema(PlainGroupSchema):
 
 class UserRegisterSchema(UserSchema):
     email = fields.Str(required=True)
+
+
+class MemberInTransactionSchema(Schema):
+    name = fields.String(required=True)
+    is_payer = fields.Boolean(required=True)
+
+
+class EnrichedTransactionSchema(Schema):
+    id = fields.Int(required=True)
+    description = fields.String(required=True)
+    price = fields.Float(required=True)
+    members = fields.List(fields.Nested(MemberInTransactionSchema), required=True)
