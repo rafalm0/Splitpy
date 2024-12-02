@@ -84,8 +84,7 @@ class TransactionList(MethodView):
             .join(GroupModel, GroupModel.id == TransactionModel.group_id)
             .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
             .join(MemberModel, MemberModel.id == TransactionMember.member_id)
-            .add_columns(TransactionModel.id, TransactionModel.description, TransactionModel.price,
-                         MemberModel.name, TransactionMember.is_payer)
+            .add_columns(MemberModel.name, TransactionMember.is_payer)
             .filter(GroupModel.user_id == current_user_id)
             .all()
         )
