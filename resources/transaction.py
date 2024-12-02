@@ -84,7 +84,7 @@ class TransactionList(MethodView):
             .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
             .join(MemberModel, MemberModel.id == TransactionMember.member_id)
             .filter(GroupModel.user_id == current_user_id)
-            .add_columns(MemberModel.name, TransactionMember.is_payer)
+            .add_columns(MemberModel.name, TransactionMember.is_payer,GroupModel.id)
             .all()
         )
 
@@ -94,9 +94,11 @@ class TransactionList(MethodView):
             transaction = t[0]
             member_name = t[1]
             is_member_payer = t[2]
+            group_id = t[3]
             if transaction.id not in enriched_transactions:
                 enriched_transactions[transaction.id] = {
                     "id": transaction.id,
+                    "group_id": group_id,
                     "description": transaction.description,
                     "price": transaction.price,
                     "members": []

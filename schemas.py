@@ -70,6 +70,7 @@ class MemberInTransactionSchema(Schema):
 
 class EnrichedTransactionSchema(Schema):
     id = fields.Int(required=True)
+    group_id = fields.Int(required=True)
     description = fields.String(required=True)
     price = fields.Float(required=True)
     members = fields.List(fields.Nested(MemberInTransactionSchema), required=True)
