@@ -5,7 +5,7 @@ def calculate_balance(transactions, group_id=None):
 
     transaction_dict = {}
     for t in transactions:
-        if group_id != t[3]:
+        if group_id == t[3]:
             continue
         transaction = t[0]
         t_id = transaction.id
