@@ -19,6 +19,7 @@ def calculate_balance(transactions, group_id=None):
         else:
             transaction_dict[t_id]['non_payer'].append(person)
 
+    print(transaction_dict)
     for t in transaction_dict.values():
         qtd_part = len(t['payer']) + len(t['non_payer'])
         qtd_payers = len(t['payer'])
@@ -30,6 +31,7 @@ def calculate_balance(transactions, group_id=None):
         for p in t['non_payer']:
             debt_dict[p] -= price_person
 
+    print(debt_dict)
     own_list = []
     owned_list = []
 
@@ -78,4 +80,5 @@ def calculate_balance(transactions, group_id=None):
 
         nmax_transactions -= 1
 
+    print(settle_transactions)
     return settle_transactions
