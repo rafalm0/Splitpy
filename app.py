@@ -17,6 +17,7 @@ from resources.transaction import blp as TransactionBlueprint
 from resources.group import blp as GroupBlueprint
 from resources.member import blp as MemberBlueprint
 from resources.user import blp as UserBlueprint
+from resources.balance import blp as BalanceBlueprint
 
 
 # models need to be already imported before sqlchemy
@@ -105,5 +106,6 @@ def create_app(db_url=None):
     api.register_blueprint(GroupBlueprint)
     api.register_blueprint(MemberBlueprint)
     api.register_blueprint(UserBlueprint)
+    api.register_blueprint(BalanceBlueprint)
 
     return app
