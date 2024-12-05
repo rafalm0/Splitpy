@@ -56,22 +56,24 @@ def calculate_balance(transactions, group_id=None):
         if len(owned_list) == 0 or len(own_list) == 0:
             break
 
-        if own_list[0] > owned_list[0]:
-            settle_transactions[transaction_id] = {'payer': own_list[0],
-                                                   'receiver': owned_list[0],
-                                                   'amount': owned_list[1]}
+        if own_list[0][1] > owned_list[0][1]:
+            settle_transactions[transaction_id] = {'payer': own_list[0][0],
+                                                   'receiver': owned_list[0][0],
+                                                   'amount': owned_list[0][1]}
+
+            own_list[0][0] -= owned_list[0][1]
             owned_list.pop(0)
-            own_list[0] -= owned_list[1]
-        elif own_list[0] < owned_list[0]:
-            settle_transactions[transaction_id] = {'payer': own_list[0],
-                                                   'receiver': owned_list[0],
-                                                   'amount': own_list[1]}
+        elif own_list[0][1] < owned_list[0][1]:
+            settle_transactions[transaction_id] = {'payer': own_list[0][0],
+                                                   'receiver': owned_list[0][0],
+                                                   'amount': own_list[0][1]}
+
+            owned_list[0][0] -= own_list[0][1]
             own_list.pop(0)
-            owned_list[0] -= own_list[1]
         else:
-            settle_transactions[transaction_id] = {'payer': own_list[0],
-                                                   'receiver': owned_list[0],
-                                                   'amount': own_list[1]}
+            settle_transactions[transaction_id] = {'payer': own_list[0][0],
+                                                   'receiver': owned_list[0][0],
+                                                   'amount': own_list[0][1]}
             own_list.pop(0)
             owned_list.pop(0)
 
