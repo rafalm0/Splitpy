@@ -61,14 +61,14 @@ def calculate_balance(transactions, group_id=None):
                                                    'receiver': owned_list[0][0],
                                                    'amount': owned_list[0][1]}
 
-            own_list[0][0] -= owned_list[0][1]
+            own_list[0][1] -= owned_list[0][1]
             owned_list.pop(0)
         elif own_list[0][1] < owned_list[0][1]:
             settle_transactions[transaction_id] = {'payer': own_list[0][0],
                                                    'receiver': owned_list[0][0],
                                                    'amount': own_list[0][1]}
 
-            owned_list[0][0] -= own_list[0][1]
+            owned_list[0][1] -= own_list[0][1]
             own_list.pop(0)
         else:
             settle_transactions[transaction_id] = {'payer': own_list[0][0],
