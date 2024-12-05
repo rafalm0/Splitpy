@@ -19,7 +19,6 @@ def calculate_balance(transactions, group_id=None):
         else:
             transaction_dict[t_id]['non_payer'].append(person)
 
-    print(transaction_dict)
     for t in transaction_dict.values():
         qtd_part = len(t['payer']) + len(t['non_payer'])
         qtd_payers = len(t['payer'])
@@ -50,30 +49,30 @@ def calculate_balance(transactions, group_id=None):
     owned_list = sorted(owned_list, reverse=True, key=lambda a: a[1])
     own_list = sorted(own_list, reverse=True, key=lambda a: a[1])
 
-    settle_transactions = {}  # dict of transactions to settle everything
-    transaction_id = 0
+    settle_transactions = []
     while nmax_transactions > 0:
         if len(owned_list) == 0 or len(own_list) == 0:
             break
 
+        print(f"Lookign at {own_list[0]} transfering to {owned_list[0]}")
         if own_list[0][1] > owned_list[0][1]:
-            settle_transactions[transaction_id] = {'payer': own_list[0][0],
+            settle_transactions.append({'payer': own_list[0][0],
                                                    'receiver': owned_list[0][0],
-                                                   'amount': owned_list[0][1]}
+                                                   'amount': owned_list[0][1]})
 
             own_list[0][1] -= owned_list[0][1]
             owned_list.pop(0)
         elif own_list[0][1] < owned_list[0][1]:
-            settle_transactions[transaction_id] = {'payer': own_list[0][0],
+            settle_transactions.append({'payer': own_list[0][0],
                                                    'receiver': owned_list[0][0],
-                                                   'amount': own_list[0][1]}
+                                                   'amount': own_list[0][1]})
 
             owned_list[0][1] -= own_list[0][1]
             own_list.pop(0)
         else:
-            settle_transactions[transaction_id] = {'payer': own_list[0][0],
+            settle_transactions.append({'payer': own_list[0][0],
                                                    'receiver': owned_list[0][0],
-                                                   'amount': own_list[0][1]}
+                                                   'amount': own_list[0][1]})
             own_list.pop(0)
             owned_list.pop(0)
 
