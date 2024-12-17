@@ -45,6 +45,7 @@ class TransactionMemberSchema(Schema):
     transaction = fields.Nested(TransactionSchema)
     member = fields.Nested(MemberSchema)
     is_payer = fields.Bool()
+    amount_paid = fields.Float()
 
 
 class UserSchema(Schema):
@@ -66,6 +67,7 @@ class UserRegisterSchema(UserSchema):
 class MemberInTransactionSchema(Schema):
     name = fields.String(required=True)
     is_payer = fields.Boolean(required=True)
+    amount_paid = fields.Float()
 
 
 class EnrichedTransactionSchema(Schema):
