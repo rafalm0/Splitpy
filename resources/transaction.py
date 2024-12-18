@@ -48,7 +48,6 @@ class Transaction(MethodView):
         if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to update this transaction.")
 
-        transaction.price = transaction_data["price"]
         transaction.description = transaction_data["description"]
 
         # Handle member linking
@@ -62,7 +61,8 @@ class Transaction(MethodView):
                 transaction_member_link = TransactionMember(
                     transaction_id=transaction.id,
                     member_id=member.id,
-                    is_payer=member_data.get("is_payer", False)
+                    paid=member_data["amount_paid"],
+                    consumed=member_data["amount_consumed"]
                 )
                 db.session.add(transaction_member_link)
 
@@ -84,7 +84,7 @@ class TransactionList(MethodView):
             .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
             .join(MemberModel, MemberModel.id == TransactionMember.member_id)
             .filter(GroupModel.user_id == current_user_id)
-            .add_columns(MemberModel.name, TransactionMember.is_payer,GroupModel.id)
+            .add_columns(MemberModel.name, GroupModel.id, TransactionMember.paid, TransactionMember.consumed)
             .all()
         )
 
@@ -93,19 +93,20 @@ class TransactionList(MethodView):
         for t in transactions:
             transaction = t[0]
             member_name = t[1]
-            is_member_payer = t[2]
-            group_id = t[3]
+            group_id = t[2]
+            paid = t[3]
+            consumed = t[4]
             if transaction.id not in enriched_transactions:
                 enriched_transactions[transaction.id] = {
                     "id": transaction.id,
                     "group_id": group_id,
                     "description": transaction.description,
-                    "price": transaction.price,
                     "members": []
                 }
             enriched_transactions[transaction.id]["members"].append({
                 "name": member_name,
-                "is_payer": is_member_payer
+                "paid": paid,
+                "consumed":consumed
             })
 
         return list(enriched_transactions.values())
@@ -122,12 +123,9 @@ class TransactionList(MethodView):
 
         transaction = TransactionModel(
             description=transaction_data['description'],
-            price=transaction_data['price'],
             group_id=transaction_data['group_id']
         )
         try:
-            db.session.add(transaction)
-            db.session.flush()  # Ensure transaction ID is available
 
             members_list = []
             raw_members = transaction_data.get('members_raw')  # only one of these are accepted by marshmallow
@@ -137,15 +135,20 @@ class TransactionList(MethodView):
                 for member_data in raw_members:
                     members_list.append({
                         "member_id": member_data.get("member_id"),
-                        "is_payer": member_data.get("is_payer", False)
+                        "amount_paid": member_data.get("amount_paid", 0),
+                        "amount_consumed": member_data.get("amount_consumed", 0)
                     })
 
             elif nested_members:
                 for member_obj in nested_members:
                     members_list.append({
                         "member_id": member_obj.member_id,
-                        "is_payer": member_obj.is_payer
+                        "amount_consumed": member_obj.amount_consumed,
+                        "amount_paid": member_obj.amount_paid
                     })
+
+            db.session.add(transaction)
+            db.session.flush()  # Ensure transaction ID is available
 
             # Process each member in the unified list
             for member_data in members_list:
@@ -156,7 +159,8 @@ class TransactionList(MethodView):
                 transaction_member_link = TransactionMember(
                     transaction_id=transaction.id,
                     member_id=member.id,
-                    is_payer=member_data["is_payer"]
+                    paid=member_data["amount_paid"],
+                    consumed=member_data["amount_consumed"]
                 )
                 db.session.add(transaction_member_link)
 
