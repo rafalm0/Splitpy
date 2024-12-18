@@ -147,6 +147,11 @@ class TransactionList(MethodView):
                         "amount_paid": member_obj.amount_paid
                     })
 
+
+            total_paid = sum(x['amount_paid'] for x in members_list)
+            total_consumed = sum(x['amount_consumed'] for x in members_list)
+            if total_paid != total_consumed:
+                abort(400, message=f"Amount paid: {total_paid} does not match total bill: {total_consumed}.")
             db.session.add(transaction)
             db.session.flush()  # Ensure transaction ID is available
 
