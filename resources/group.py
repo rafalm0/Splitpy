@@ -107,6 +107,7 @@ class TransactionList(MethodView):
         current_user_id = get_jwt_identity()
         if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to view this group.")
+            return None
         else:
             transactions = (
                 db.session.query(TransactionModel)
@@ -117,9 +118,22 @@ class TransactionList(MethodView):
                 .add_columns(MemberModel.name, TransactionMember.paid, TransactionMember.consumed)
                 .all()
             )
-            response = {
-                "price": sum([float(person[3]) for person in transactions]),
-                "description": transactions[0][0].description,
-                "members": {person[1]: {"paid": person[2], "consumed": person[3]} for person in transactions}
-            }
-        return response
+
+            response = {}
+            for transaction in transactions:
+                t_id = transaction[0].id
+                description = transaction[0].description
+                name = transaction[1]
+                paid = transaction[2]
+                consumed = transaction[3]
+                if t_id not in response.keys():
+                    response[t_id] = {}
+                    response[t_id]['id'] = t_id
+                    response[t_id]["members"] = []
+                    response[t_id]['description'] = description
+                    response[t_id]['price'] = 0
+                response[t_id]['price'] = response[t_id]['price'] + consumed
+                response[t_id]["members"].append({"name": name, "consumed": consumed, "paid": paid})
+
+            response = [x for x in response.values]
+            return response
