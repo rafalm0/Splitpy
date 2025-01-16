@@ -4,7 +4,7 @@ from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from models import GroupModel
+from models import GroupModel, TransactionModel, TransactionMember, MemberModel, UserModel
 from flask_jwt_extended import get_jwt, jwt_required, get_jwt_identity
 from db import db
 from schemas import GroupSchema
@@ -77,7 +77,6 @@ class GroupList(MethodView):
         groups = GroupModel.query.filter_by(user_id=user_id).all()
         return groups
 
-
     @jwt_required()
     @blp.arguments(GroupSchema)
     @blp.response(201, GroupSchema)
@@ -98,6 +97,7 @@ class GroupList(MethodView):
 
         return item
 
+
 @blp.route("/group/<int:group_id>/transactions")
 class TransactionList(MethodView):
 
@@ -117,4 +117,9 @@ class TransactionList(MethodView):
                 .add_columns(MemberModel.name, TransactionMember.paid, TransactionMember.consumed)
                 .all()
             )
-        return transactions
+            response = {
+                "price": sum([float(person[3]) for person in transactions]),
+                "description": transactions[0][0].description,
+                "members": {person[1]: {"paid": person[2], "consumed": person[3]} for person in transactions}
+            }
+        return response
