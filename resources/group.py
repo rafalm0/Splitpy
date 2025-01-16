@@ -97,3 +97,24 @@ class GroupList(MethodView):
             abort(500, message="Error creating item IN post /ITEM")
 
         return item
+
+@blp.route("/group/<int:group_id>/transactions")
+class TransactionList(MethodView):
+
+    @jwt_required()
+    def get(self, group_id):
+        group = GroupModel.query.get_or_404(group_id)
+        current_user_id = get_jwt_identity()
+        if str(group.user_id) != str(current_user_id):
+            abort(403, message="You are not authorized to view this group.")
+        else:
+            transactions = (
+                db.session.query(TransactionModel)
+                .join(GroupModel, GroupModel.id == TransactionModel.group_id)
+                .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
+                .join(MemberModel, MemberModel.id == TransactionMember.member_id)
+                .filter(GroupModel.user_id == group.user_id)
+                .add_columns(MemberModel.name, TransactionMember.paid, TransactionMember.consumed)
+                .all()
+            )
+        return transactions
