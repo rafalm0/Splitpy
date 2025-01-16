@@ -9,8 +9,8 @@ def calculate_balance(transactions, group_id=None):
             continue
         transaction = t[0]
         person = t[1]
-        paid = t[2]
-        consumed = t[3]
+        paid = t[3]
+        consumed = t[4]
         if person not in debt_dict.keys():
             debt_dict[person] = 0
         debt_dict[person] += paid
