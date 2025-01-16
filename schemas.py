@@ -7,7 +7,6 @@ for versions that include more and could be related to other objects or key'''
 class PlainTransactionSchema(Schema):
     id = fields.Int(dump_only=True)  # means that we generate this, so we never receive it
     description = fields.Str(required=True)
-    price = fields.Float(required=True)
 
 
 class PlainMemberSchema(Schema):
@@ -22,7 +21,6 @@ class PlainGroupSchema(Schema):
 
 class TransactionSchema(PlainTransactionSchema):
     group_id = fields.Int(required=True, load_only=True)
-    # group = fields.Nested(PlainTransactionSchema(), dump_only=True)
     group = fields.Nested(PlainGroupSchema(), dump_only=True)
     members = fields.List(fields.Nested(PlainMemberSchema()), required=False, dump_only=True)
     members_raw = fields.List(fields.Dict(), required=False)
@@ -44,7 +42,8 @@ class MemberSchema(PlainMemberSchema):
 class TransactionMemberSchema(Schema):
     transaction = fields.Nested(TransactionSchema)
     member = fields.Nested(MemberSchema)
-    is_payer = fields.Bool()
+    amount_paid = fields.Float()
+    amount_consumed = fields.Float()
 
 
 class UserSchema(Schema):
@@ -66,11 +65,11 @@ class UserRegisterSchema(UserSchema):
 class MemberInTransactionSchema(Schema):
     name = fields.String(required=True)
     is_payer = fields.Boolean(required=True)
+    amount_paid = fields.Float()
 
 
 class EnrichedTransactionSchema(Schema):
     id = fields.Int(required=True)
     group_id = fields.Int(required=True)
     description = fields.String(required=True)
-    price = fields.Float(required=True)
     members = fields.List(fields.Nested(MemberInTransactionSchema), required=True)
