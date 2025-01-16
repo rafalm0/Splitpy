@@ -135,5 +135,5 @@ class TransactionList(MethodView):
                 response[t_id]['price'] = response[t_id]['price'] + consumed
                 response[t_id]["members"].append({"name": name, "consumed": consumed, "paid": paid})
 
-            response = [x for x in response.values]
+            response = [x for x in response.values()]
             return response
