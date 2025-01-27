@@ -114,8 +114,8 @@ class TransactionList(MethodView):
                 .join(GroupModel, GroupModel.id == TransactionModel.group_id)
                 .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
                 .join(MemberModel, MemberModel.id == TransactionMember.member_id)
-                .filter(GroupModel.user_id == group.user_id)
-                .add_columns(MemberModel.name, TransactionMember.paid, TransactionMember.consumed)
+                .filter(GroupModel.user_id == 2)
+                .add_columns(MemberModel.name, TransactionMember.paid, TransactionMember.consumed, TransactionModel.created_at)
                 .all()
             )
 
@@ -126,12 +126,18 @@ class TransactionList(MethodView):
                 name = transaction[1]
                 paid = transaction[2]
                 consumed = transaction[3]
+                created_at = transaction[4]
+                if created_at is None:
+                    created_at = "-x-"
+                else:
+                    created_at = str(created_at).split(" ")[0]
                 if t_id not in response.keys():
                     response[t_id] = {}
                     response[t_id]['id'] = t_id
                     response[t_id]["members"] = []
                     response[t_id]['description'] = description
                     response[t_id]['price'] = 0
+                    response[t_id]['created_at'] = created_at
                 response[t_id]['price'] = response[t_id]['price'] + consumed
                 response[t_id]["members"].append({"name": name, "consumed": consumed, "paid": paid})
 
