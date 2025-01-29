@@ -114,7 +114,7 @@ class TransactionList(MethodView):
                 .join(GroupModel, GroupModel.id == TransactionModel.group_id)
                 .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
                 .join(MemberModel, MemberModel.id == TransactionMember.member_id)
-                .filter(GroupModel.user_id == 2)
+                .filter(GroupModel.user_id == group.user_id)
                 .add_columns(MemberModel.name, TransactionMember.paid, TransactionMember.consumed, TransactionModel.created_at)
                 .all()
             )
