@@ -1,5 +1,8 @@
 from flask import Flask, jsonify
-from flask_jwt_extended import JWTManager
+from flask_jwt_extended import JWTManager,create_access_token,get_jwt,get_jwt_identity,jwt_required,set_access_cookies,unset_jwt_cookies
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
 from flask_migrate import Migrate
 from flask_smorest import Api
 from dotenv import load_dotenv
@@ -69,6 +72,20 @@ def create_app(db_url=None):
 
     # ---------------------------- jwt config and methods-----------------------------------
     jwt = JWTManager(app)
+
+    @app.after_request
+    def refresh_expiring_jwts(response):
+        try:
+            exp_timestamp = get_jwt()["exp"]
+            now = datetime.now(timezone.utc)
+            target_timestamp = datetime.timestamp(now + timedelta(minutes=30))
+            if target_timestamp > exp_timestamp:
+                access_token = create_access_token(identity=get_jwt_identity())
+                set_access_cookies(response, access_token)
+            return response
+        except (RuntimeError, KeyError):
+            # Case where there is not a valid JWT. Just return the original response
+            return response
 
     @jwt.token_in_blocklist_loader
     def check_if_token_in_clocklist(jwt_header, jwt_payload):
