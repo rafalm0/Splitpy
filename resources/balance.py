@@ -26,7 +26,7 @@ class GroupBalance(MethodView):
             .join(GroupModel, GroupModel.id == TransactionModel.group_id)
             .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
             .join(MemberModel, MemberModel.id == TransactionMember.member_id)
-            .filter(GroupModel.id == current_user_id)
+            .filter(GroupModel.id == group.id)
             .add_columns(MemberModel.name, GroupModel.id, TransactionMember.paid, TransactionMember.consumed)
             .all()
         )
