@@ -26,9 +26,11 @@ class TransactionSchema(PlainTransactionSchema):
     members_raw = fields.List(fields.Dict(), required=False)
 
 
-class TransactionUpdateSchema(Schema):
-    description = fields.Str()
-    price = fields.Float()
+class TransactionUpdateSchema(PlainTransactionSchema):
+    group_id = fields.Int(required=False, load_only=True)
+    group = fields.Nested(PlainGroupSchema(), required=False, dump_only=True)
+    members = fields.List(fields.Nested(PlainMemberSchema()), required=False, dump_only=True)
+    members_raw = fields.List(fields.Dict(), required=False)
 
 
 class MemberSchema(PlainMemberSchema):

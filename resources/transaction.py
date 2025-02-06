@@ -41,6 +41,7 @@ class Transaction(MethodView):
     @blp.arguments(TransactionUpdateSchema)
     @blp.response(200, TransactionSchema)
     def put(self, transaction_data, transaction_id):
+
         transaction = TransactionModel.query.get_or_404(transaction_id)
         group = GroupModel.query.get_or_404(transaction.group_id)
         current_user_id = get_jwt_identity()
@@ -48,25 +49,55 @@ class Transaction(MethodView):
         if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to update this transaction.")
 
-        transaction.description = transaction_data["description"]
+        try:
+            transaction.description = transaction_data["description"]
 
-        # Handle member linking
-        if "members" in transaction_data:
             transaction.members.clear()
-            for member_data in transaction_data["members"]:
+            db.session.flush()  # Ensures previous members are cleared before adding new ones
+
+            members_list = []
+            raw_members = transaction_data.get('members_raw')  # JSON-style list
+            nested_members = transaction_data.get('members')  # Marshmallow schema
+
+            if raw_members:
+                for member_data in raw_members:
+                    members_list.append({
+                        "member_id": member_data.get("member_id"),
+                        "amount_paid": member_data.get("amount_paid", 0),
+                        "amount_consumed": member_data.get("amount_consumed", 0)
+                    })
+
+            elif nested_members:
+                for member_obj in nested_members:
+                    members_list.append({
+                        "member_id": member_obj.member_id,
+                        "amount_paid": member_obj.amount_paid,
+                        "amount_consumed": member_obj.amount_consumed
+                    })
+
+            transaction_member_links = []
+            for member_data in members_list:
                 member = MemberModel.query.get_or_404(member_data["member_id"])
                 if member.group_id != group.id:
                     abort(400, message="Member does not belong to the group.")
 
-                transaction_member_link = TransactionMember(
+                transaction_member_links.append(TransactionMember(
                     transaction_id=transaction.id,
                     member_id=member.id,
                     paid=member_data["amount_paid"],
                     consumed=member_data["amount_consumed"]
-                )
-                db.session.add(transaction_member_link)
+                ))
 
-        db.session.add(transaction)
+            db.session.add_all(transaction_member_links)
+
+            total_paid = sum(m.paid for m in transaction_member_links)
+            total_consumed = sum(m.consumed for m in transaction_member_links)
+            if total_paid != total_consumed:
+                abort(400, message=f"Updated amounts do not match: Paid={total_paid}, Consumed={total_consumed}.")
+
+        except SQLAlchemyError:
+            db.session.rollback()
+            abort(500, message="An error occurred while inserting the transaction.")
         db.session.commit()
 
         return transaction
