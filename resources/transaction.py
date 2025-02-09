@@ -29,7 +29,7 @@ class Transaction(MethodView):
             .filter(TransactionModel.id == transaction_id)
             .add_columns(MemberModel.name, TransactionMember.paid, TransactionMember.consumed)
             .all()
-        )[0]
+        )
 
         # Check if the transaction exists
         if not transaction:
