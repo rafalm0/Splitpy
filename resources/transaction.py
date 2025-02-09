@@ -13,7 +13,7 @@ blp = Blueprint("Transactions", __name__, description="Operations on transaction
 @blp.route("/transaction/<int:transaction_id>")
 class Transaction(MethodView):
     @jwt_required()
-    @blp.response(200, TransactionSchema)
+    @blp.response(200, EnrichedTransactionSchema)
     def get(self, transaction_id):
         transaction = TransactionModel.query.get_or_404(transaction_id)
         group = GroupModel.query.get_or_404(transaction.group_id)
@@ -22,7 +22,35 @@ class Transaction(MethodView):
         if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to view this transaction.")
 
-        return transaction
+        transaction = (
+            db.session.query(TransactionModel)
+            .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
+            .join(MemberModel, MemberModel.id == TransactionMember.member_id)
+            .filter(TransactionModel.id == transaction_id)
+            .add_columns(MemberModel.name, TransactionMember.paid, TransactionMember.consumed)
+            .all()
+        )[0]
+
+        # Check if the transaction exists
+        if not transaction:
+            return {"message": "Transaction not found"}, 404
+
+        # Build the enriched transaction response
+        enriched_transaction = {
+            "id": transaction[0][0].id,  # First element of transaction tuple
+            "group_id": transaction[0][2],  # Group ID
+            "description": transaction[0][0].description,  # Transaction description
+            "members": []
+        }
+
+        for t in transaction:
+            enriched_transaction["members"].append({
+                "name": t[1],  # Member name
+                "paid": t[2],  # Amount paid by the member
+                "consumed": t[3]  # Amount consumed by the member
+            })
+
+        return enriched_transaction
 
     @jwt_required()
     def delete(self, transaction_id):
