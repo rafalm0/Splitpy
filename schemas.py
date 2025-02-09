@@ -66,8 +66,10 @@ class UserRegisterSchema(UserSchema):
 
 class MemberInTransactionSchema(Schema):
     name = fields.String(required=True)
-    is_payer = fields.Boolean(required=True)
-    amount_paid = fields.Float()
+    is_payer = fields.Boolean(required=False)
+    amount_paid = fields.Float(required=False)
+    paid = fields.Float(required=False)
+    consumed = fields.Float(required=False)
 
 
 class EnrichedTransactionSchema(Schema):
