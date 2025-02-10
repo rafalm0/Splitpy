@@ -27,7 +27,7 @@ class Transaction(MethodView):
             .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
             .join(MemberModel, MemberModel.id == TransactionMember.member_id)
             .filter(TransactionModel.id == transaction_id)
-            .add_columns(MemberModel.name, TransactionMember.paid, TransactionMember.consumed)
+            .add_columns(MemberModel.name, TransactionMember.paid, TransactionMember.consumed, MemberModel.id)
             .all()
         )
 
@@ -47,7 +47,8 @@ class Transaction(MethodView):
             enriched_transaction["members"].append({
                 "name": t[1],  # Member name
                 "paid": t[2],  # Amount paid by the member
-                "consumed": t[3]  # Amount consumed by the member
+                "consumed": t[3],  # Amount consumed by the member
+                "id": t[4]
             })
 
         return enriched_transaction
