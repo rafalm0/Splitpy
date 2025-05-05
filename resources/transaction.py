@@ -13,7 +13,7 @@ blp = Blueprint("Transactions", __name__, description="Operations on transaction
 @blp.route("/transaction/<int:transaction_id>")
 class Transaction(MethodView):
     @jwt_required()
-    @blp.response(200, TransactionSchema)
+    @blp.response(200, EnrichedTransactionSchema)
     def get(self, transaction_id):
         transaction = TransactionModel.query.get_or_404(transaction_id)
         group = GroupModel.query.get_or_404(transaction.group_id)
@@ -22,7 +22,36 @@ class Transaction(MethodView):
         if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to view this transaction.")
 
-        return transaction
+        transaction = (
+            db.session.query(TransactionModel)
+            .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
+            .join(MemberModel, MemberModel.id == TransactionMember.member_id)
+            .filter(TransactionModel.id == transaction_id)
+            .add_columns(MemberModel.name, TransactionMember.paid, TransactionMember.consumed, MemberModel.id)
+            .all()
+        )
+
+        # Check if the transaction exists
+        if not transaction:
+            return {"message": "Transaction not found"}, 404
+
+        # Build the enriched transaction response
+        enriched_transaction = {
+            "id": transaction[0][0].id,  # First element of transaction tuple
+            "group_id": transaction[0][2],  # Group ID
+            "description": transaction[0][0].description,  # Transaction description
+            "members": []
+        }
+
+        for t in transaction:
+            enriched_transaction["members"].append({
+                "name": t[1],  # Member name
+                "paid": t[2],  # Amount paid by the member
+                "consumed": t[3],  # Amount consumed by the member
+                "id": t[4]
+            })
+
+        return enriched_transaction
 
     @jwt_required()
     def delete(self, transaction_id):
@@ -41,6 +70,7 @@ class Transaction(MethodView):
     @blp.arguments(TransactionUpdateSchema)
     @blp.response(200, TransactionSchema)
     def put(self, transaction_data, transaction_id):
+
         transaction = TransactionModel.query.get_or_404(transaction_id)
         group = GroupModel.query.get_or_404(transaction.group_id)
         current_user_id = get_jwt_identity()
@@ -48,25 +78,55 @@ class Transaction(MethodView):
         if str(group.user_id) != str(current_user_id):
             abort(403, message="You are not authorized to update this transaction.")
 
-        transaction.price = transaction_data["price"]
-        transaction.description = transaction_data["description"]
+        try:
+            transaction.description = transaction_data["description"]
 
-        # Handle member linking
-        if "members" in transaction_data:
             transaction.members.clear()
-            for member_data in transaction_data["members"]:
+            db.session.flush()  # Ensures previous members are cleared before adding new ones
+
+            members_list = []
+            raw_members = transaction_data.get('members_raw')  # JSON-style list
+            nested_members = transaction_data.get('members')  # Marshmallow schema
+
+            if raw_members:
+                for member_data in raw_members:
+                    members_list.append({
+                        "member_id": member_data.get("member_id"),
+                        "amount_paid": member_data.get("amount_paid", 0),
+                        "amount_consumed": member_data.get("amount_consumed", 0)
+                    })
+
+            elif nested_members:
+                for member_obj in nested_members:
+                    members_list.append({
+                        "member_id": member_obj.member_id,
+                        "amount_paid": member_obj.amount_paid,
+                        "amount_consumed": member_obj.amount_consumed
+                    })
+
+            transaction_member_links = []
+            for member_data in members_list:
                 member = MemberModel.query.get_or_404(member_data["member_id"])
                 if member.group_id != group.id:
                     abort(400, message="Member does not belong to the group.")
 
-                transaction_member_link = TransactionMember(
+                transaction_member_links.append(TransactionMember(
                     transaction_id=transaction.id,
                     member_id=member.id,
-                    is_payer=member_data.get("is_payer", False)
-                )
-                db.session.add(transaction_member_link)
+                    paid=member_data["amount_paid"],
+                    consumed=member_data["amount_consumed"]
+                ))
 
-        db.session.add(transaction)
+            db.session.add_all(transaction_member_links)
+
+            total_paid = sum(m.paid for m in transaction_member_links)
+            total_consumed = sum(m.consumed for m in transaction_member_links)
+            if total_paid != total_consumed:
+                abort(400, message=f"Updated amounts do not match: Paid={total_paid}, Consumed={total_consumed}.")
+
+        except SQLAlchemyError:
+            db.session.rollback()
+            abort(500, message="An error occurred while inserting the transaction.")
         db.session.commit()
 
         return transaction
@@ -84,7 +144,7 @@ class TransactionList(MethodView):
             .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
             .join(MemberModel, MemberModel.id == TransactionMember.member_id)
             .filter(GroupModel.user_id == current_user_id)
-            .add_columns(MemberModel.name, TransactionMember.is_payer,GroupModel.id)
+            .add_columns(MemberModel.name, GroupModel.id, TransactionMember.paid, TransactionMember.consumed)
             .all()
         )
 
@@ -93,19 +153,20 @@ class TransactionList(MethodView):
         for t in transactions:
             transaction = t[0]
             member_name = t[1]
-            is_member_payer = t[2]
-            group_id = t[3]
+            group_id = t[2]
+            paid = t[3]
+            consumed = t[4]
             if transaction.id not in enriched_transactions:
                 enriched_transactions[transaction.id] = {
                     "id": transaction.id,
                     "group_id": group_id,
                     "description": transaction.description,
-                    "price": transaction.price,
                     "members": []
                 }
             enriched_transactions[transaction.id]["members"].append({
                 "name": member_name,
-                "is_payer": is_member_payer
+                "paid": paid,
+                "consumed":consumed
             })
 
         return list(enriched_transactions.values())
@@ -122,12 +183,9 @@ class TransactionList(MethodView):
 
         transaction = TransactionModel(
             description=transaction_data['description'],
-            price=transaction_data['price'],
             group_id=transaction_data['group_id']
         )
         try:
-            db.session.add(transaction)
-            db.session.flush()  # Ensure transaction ID is available
 
             members_list = []
             raw_members = transaction_data.get('members_raw')  # only one of these are accepted by marshmallow
@@ -137,15 +195,25 @@ class TransactionList(MethodView):
                 for member_data in raw_members:
                     members_list.append({
                         "member_id": member_data.get("member_id"),
-                        "is_payer": member_data.get("is_payer", False)
+                        "amount_paid": member_data.get("amount_paid", 0),
+                        "amount_consumed": member_data.get("amount_consumed", 0)
                     })
 
             elif nested_members:
                 for member_obj in nested_members:
                     members_list.append({
                         "member_id": member_obj.member_id,
-                        "is_payer": member_obj.is_payer
+                        "amount_consumed": member_obj.amount_consumed,
+                        "amount_paid": member_obj.amount_paid
                     })
+
+
+            total_paid = sum(x['amount_paid'] for x in members_list)
+            total_consumed = sum(x['amount_consumed'] for x in members_list)
+            if total_paid != total_consumed:
+                abort(400, message=f"Amount paid: {total_paid} does not match total bill: {total_consumed}.")
+            db.session.add(transaction)
+            db.session.flush()  # Ensure transaction ID is available
 
             # Process each member in the unified list
             for member_data in members_list:
@@ -156,7 +224,8 @@ class TransactionList(MethodView):
                 transaction_member_link = TransactionMember(
                     transaction_id=transaction.id,
                     member_id=member.id,
-                    is_payer=member_data["is_payer"]
+                    paid=member_data["amount_paid"],
+                    consumed=member_data["amount_consumed"]
                 )
                 db.session.add(transaction_member_link)
 

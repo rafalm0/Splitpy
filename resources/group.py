@@ -4,7 +4,7 @@ from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from models import GroupModel
+from models import GroupModel, TransactionModel, TransactionMember, MemberModel, UserModel
 from flask_jwt_extended import get_jwt, jwt_required, get_jwt_identity
 from db import db
 from schemas import GroupSchema
@@ -77,7 +77,6 @@ class GroupList(MethodView):
         groups = GroupModel.query.filter_by(user_id=user_id).all()
         return groups
 
-
     @jwt_required()
     @blp.arguments(GroupSchema)
     @blp.response(201, GroupSchema)
@@ -97,3 +96,50 @@ class GroupList(MethodView):
             abort(500, message="Error creating item IN post /ITEM")
 
         return item
+
+
+@blp.route("/group/<int:group_id>/transactions")
+class TransactionList(MethodView):
+
+    @jwt_required()
+    def get(self, group_id):
+        group = GroupModel.query.get_or_404(group_id)
+        current_user_id = get_jwt_identity()
+        if str(group.user_id) != str(current_user_id):
+            abort(403, message="You are not authorized to view this group.")
+            return None
+        else:
+            transactions = (
+                db.session.query(TransactionModel)
+                .join(GroupModel, GroupModel.id == TransactionModel.group_id)
+                .join(TransactionMember, TransactionMember.transaction_id == TransactionModel.id)
+                .join(MemberModel, MemberModel.id == TransactionMember.member_id)
+                .filter(GroupModel.id == group.id)
+                .add_columns(MemberModel.name, TransactionMember.paid, TransactionMember.consumed, TransactionModel.created_at)
+                .all()
+            )
+
+            response = {}
+            for transaction in transactions:
+                t_id = transaction[0].id
+                description = transaction[0].description
+                name = transaction[1]
+                paid = transaction[2]
+                consumed = transaction[3]
+                created_at = transaction[4]
+                if created_at is None:
+                    created_at = "-x-"
+                else:
+                    created_at = str(created_at).split(" ")[0]
+                if t_id not in response.keys():
+                    response[t_id] = {}
+                    response[t_id]['id'] = t_id
+                    response[t_id]["members"] = []
+                    response[t_id]['description'] = description
+                    response[t_id]['price'] = 0
+                    response[t_id]['created_at'] = created_at
+                response[t_id]['price'] = response[t_id]['price'] + consumed
+                response[t_id]["members"].append({"name": name, "consumed": consumed, "paid": paid})
+
+            response = [x for x in response.values()]
+            return response
