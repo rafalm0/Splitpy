@@ -30,11 +30,6 @@ class UserRegister(MethodView):
 
         db.session.add(user)
         db.session.commit()
-        if current_app.config['USING_REDIS_QUEUE']:  # must also setup background worker, refer to:
-            # https://rest-apis-flask.teclado.com/docs/task_queues_emails/rq_background_worker/
-            current_app.queue.enqueue(send_user_registration_email, user.email, user.username)
-        else:
-            send_user_registration_email(user.email, user.username)
         return {"message": "User created"}, 201
 
 
